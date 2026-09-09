@@ -9,13 +9,20 @@ from opinions_app.forms import OpinionForm
 from opinions_app.models import Opinion
 
 
+def random_opinion():
+    quantity = Opinion.query.count()
+    if quantity:
+        offset_value = randrange(quantity)
+        opinion = Opinion.query.offset(offset_value).first()
+        return opinion
+
+
 @app.route('/')
 def index_view():
-    quantity = Opinion.query.count()
-    if not quantity:
+    opinion = random_opinion()
+    # Если random_opinion() вернула None, значит, в БД нет записей.
+    if opinion is None:
         abort(500)
-    offset_value = randrange(quantity)
-    opinion = Opinion.query.offset(offset_value).first()
     return render_template('opinion.html', opinion=opinion)
 
 
