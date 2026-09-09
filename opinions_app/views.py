@@ -4,9 +4,11 @@ from random import randrange
 
 from flask import abort, flash, redirect, render_template, url_for
 
-from opinions_app import app, db
-from opinions_app.forms import OpinionForm
-from opinions_app.models import Opinion
+from . import app, db
+# Импортируйте новую функцию.
+from .dropbox import async_upload_files_to_dropbox
+from .forms import OpinionForm
+from .models import Opinion
 
 
 def random_opinion():
@@ -27,17 +29,25 @@ def index_view():
 
 
 @app.route('/add', methods=['GET', 'POST'])
-def add_opinion_view():
+# Допишите ключевое слово async к функции.
+async def add_opinion_view():
     form = OpinionForm()
     if form.validate_on_submit():
         text = form.text.data
         if Opinion.query.filter_by(text=text).first() is not None:
             flash('Такое мнение уже было оставлено ранее!')
             return render_template('add_opinion.html', form=form)
+        # Замените вызов синхронной функции на вызов асинхронной.
+        # Обязательно добавьте ключевое слово await,
+        # так как функция async_upload_files_to_dropbox() асинхронная.
+        urls = await async_upload_files_to_dropbox(form.images.data)
         opinion = Opinion(
             title=form.title.data,
             text=text,
-            source=form.source.data
+            source=form.source.data,
+            # При создании объекта передайте все ссылки
+            # на изображения в поле images.
+            images=urls
         )
         db.session.add(opinion)
         db.session.commit()
